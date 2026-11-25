@@ -15,7 +15,7 @@ import { ReportsView } from './ReportsView';
 import { Sidebar } from './Sidebar';
 import { StudentsView } from './StudentsView';
 import { TopBar } from './TopBar';
-import { useDojoStore } from './services/dojoStore';
+import { useDojoStore } from './dojoStore';
 import type { NavSection, PaymentRecord, Student } from './types/dojo';
 
 function getTodayIso(): string {
