@@ -1,0 +1,318 @@
+{
+  "entities": {
+    "DojoProfile": {
+      "title": "DojoProfile",
+      "description": "Karate institution profile and global configuration settings.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "tagline": { "type": "string", "maxLength": 180 },
+        "senseiName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 120 },
+        "address": { "type": "string", "maxLength": 300 },
+        "currency": { "type": "string", "minLength": 1, "maxLength": 10 },
+        "defaultAdmissionFee": { "type": "number" },
+        "defaultMonthlyFee": { "type": "number" },
+        "logoDataUrl": { "type": "string", "maxLength": 300000 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name",
+        "tagline",
+        "senseiName",
+        "phone",
+        "email",
+        "address",
+        "currency",
+        "defaultAdmissionFee",
+        "defaultMonthlyFee",
+        "logoDataUrl",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DojoBatch": {
+      "title": "DojoBatch",
+      "description": "Training class batch schedule and default tuition configuration.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "schedule": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "instructor": { "type": "string", "maxLength": 80 },
+        "monthlyFee": { "type": "number" },
+        "capacity": { "type": "number" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name",
+        "schedule",
+        "instructor",
+        "monthlyFee",
+        "capacity",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Enrolled student record in the karate institution database.",
+      "type": "object",
+      "properties": {
+        "rollNumber": { "type": "string", "minLength": 2, "maxLength": 32 },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "dateOfBirth": { "type": "string", "maxLength": 20 },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "guardianName": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "minLength": 5, "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 120 },
+        "address": { "type": "string", "maxLength": 250 },
+        "emergencyContact": { "type": "string", "maxLength": 100 },
+        "batchId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "batchName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "beltRank": {
+          "type": "string",
+          "enum": ["White", "Yellow", "Orange", "Green", "Blue", "Purple", "Brown", "Black"]
+        },
+        "admissionDate": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "admissionFee": { "type": "number" },
+        "monthlyFee": { "type": "number" },
+        "status": { "type": "string", "enum": ["Active", "On Leave", "Inactive"] },
+        "medicalNotes": { "type": "string", "maxLength": 500 },
+        "lastPromotedDate": { "type": "string", "maxLength": 20 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "rollNumber",
+        "fullName",
+        "dateOfBirth",
+        "gender",
+        "guardianName",
+        "phone",
+        "email",
+        "address",
+        "emergencyContact",
+        "batchId",
+        "batchName",
+        "beltRank",
+        "admissionDate",
+        "admissionFee",
+        "monthlyFee",
+        "status",
+        "medicalNotes",
+        "lastPromotedDate",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "OnlineAdmission": {
+      "title": "OnlineAdmission",
+      "description": "Submitted online admission form awaiting review or enrollment.",
+      "type": "object",
+      "properties": {
+        "applicantName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "dateOfBirth": { "type": "string", "maxLength": 20 },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "guardianName": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "minLength": 5, "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 120 },
+        "address": { "type": "string", "maxLength": 250 },
+        "emergencyContact": { "type": "string", "maxLength": 100 },
+        "preferredBatchId": { "type": "string", "maxLength": 128 },
+        "preferredBatchName": { "type": "string", "maxLength": 80 },
+        "previousExperience": { "type": "string", "maxLength": 200 },
+        "medicalNotes": { "type": "string", "maxLength": 500 },
+        "applicationStatus": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] },
+        "submittedDate": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "applicantName",
+        "dateOfBirth",
+        "gender",
+        "guardianName",
+        "phone",
+        "email",
+        "address",
+        "emergencyContact",
+        "preferredBatchId",
+        "preferredBatchName",
+        "previousExperience",
+        "medicalNotes",
+        "applicationStatus",
+        "submittedDate",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Single student attendance status for a training date.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "month": { "type": "string", "minLength": 7, "maxLength": 7, "pattern": "^\\d{4}-\\d{2}$" },
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "rollNumber": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "batchId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "status": { "type": "string", "enum": ["Present", "Absent", "Late"] },
+        "note": { "type": "string", "maxLength": 200 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "date",
+        "month",
+        "studentId",
+        "studentName",
+        "rollNumber",
+        "batchId",
+        "status",
+        "note",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PaymentRecord": {
+      "title": "PaymentRecord",
+      "description": "Fee collection receipt or other dojo income transaction.",
+      "type": "object",
+      "properties": {
+        "receiptNumber": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Monthly Fee",
+            "Admission Fee",
+            "Belt Exam",
+            "Uniform & Gear",
+            "Tournament",
+            "Private Coaching",
+            "Other Income"
+          ]
+        },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 100 },
+        "billingMonth": { "type": "string", "minLength": 7, "maxLength": 7, "pattern": "^\\d{4}-\\d{2}$" },
+        "amount": { "type": "number" },
+        "discount": { "type": "number" },
+        "netAmount": { "type": "number" },
+        "method": { "type": "string", "enum": ["Cash", "Card", "Bank Transfer", "Mobile / UPI"] },
+        "paymentDate": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "status": { "type": "string", "enum": ["Paid", "Partial"] },
+        "notes": { "type": "string", "maxLength": 300 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "receiptNumber",
+        "category",
+        "studentId",
+        "studentName",
+        "billingMonth",
+        "amount",
+        "discount",
+        "netAmount",
+        "method",
+        "paymentDate",
+        "status",
+        "notes",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MonthlyBill": {
+      "title": "MonthlyBill",
+      "description": "Monthly recurring or one-time dojo bill and expense.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Dojo Rent",
+            "Instructor Salary",
+            "Utilities",
+            "Equipment & Mats",
+            "Marketing",
+            "Maintenance",
+            "Other"
+          ]
+        },
+        "billingMonth": { "type": "string", "minLength": 7, "maxLength": 7, "pattern": "^\\d{4}-\\d{2}$" },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "paidDate": { "type": "string", "maxLength": 20 },
+        "status": { "type": "string", "enum": ["Paid", "Pending"] },
+        "recurring": { "type": "boolean" },
+        "vendor": { "type": "string", "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 300 },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "title",
+        "category",
+        "billingMonth",
+        "amount",
+        "dueDate",
+        "paidDate",
+        "status",
+        "recurring",
+        "vendor",
+        "notes",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/dojos/{dojoId}": {
+      "schema": { "$ref": "#/entities/DojoProfile" },
+      "description": "Karate club configuration and profile owned by the authenticated club director."
+    },
+    "/dojos/{dojoId}/batches/{batchId}": {
+      "schema": { "$ref": "#/entities/DojoBatch" },
+      "description": "Training class batches belonging to a dojo."
+    },
+    "/dojos/{dojoId}/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Student database records belonging to a dojo."
+    },
+    "/dojos/{dojoId}/admissions/{admissionId}": {
+      "schema": { "$ref": "#/entities/OnlineAdmission" },
+      "description": "Online admission form applications belonging to a dojo."
+    },
+    "/dojos/{dojoId}/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Daily student attendance entries belonging to a dojo."
+    },
+    "/dojos/{dojoId}/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/PaymentRecord" },
+      "description": "Fee collection receipts and income ledger items belonging to a dojo."
+    },
+    "/dojos/{dojoId}/bills/{billId}": {
+      "schema": { "$ref": "#/entities/MonthlyBill" },
+      "description": "Monthly bills and expenses belonging to a dojo."
+    }
+  }
+}

@@ -1,0 +1,434 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'mohammadratul85@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isDojoOwner(dojoId) {
+      return isVerifiedUser() &&
+        exists(/databases/$(database)/documents/dojos/$(dojoId)) &&
+        get(/databases/$(database)/documents/dojos/$(dojoId)).data.ownerId == request.auth.uid;
+    }
+
+    function isDojoOwnerAfter(dojoId) {
+      return isVerifiedUser() &&
+        existsAfter(/databases/$(database)/documents/dojos/$(dojoId)) &&
+        getAfter(/databases/$(database)/documents/dojos/$(dojoId)).data.ownerId == request.auth.uid;
+    }
+
+    function isOwnerOrAdminOnExisting() {
+      return isVerifiedUser() && resource != null && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+    }
+
+    function isValidDateString(val) {
+      return val is string && val.size() == 10 && val.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidOptionalDateString(val) {
+      return val is string && val.size() <= 20 && (val == '' || val.matches('^\\d{4}-\\d{2}-\\d{2}$'));
+    }
+
+    function isValidMonthString(val) {
+      return val is string && val.size() == 7 && val.matches('^\\d{4}-\\d{2}$');
+    }
+
+    // --- Validation Blueprints ---
+    function isValidDojoProfile(data) {
+      return data.keys().hasAll([
+          'name', 'tagline', 'senseiName', 'phone', 'email', 'address',
+          'currency', 'defaultAdmissionFee', 'defaultMonthlyFee', 'logoDataUrl',
+          'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'name', 'tagline', 'senseiName', 'phone', 'email', 'address',
+          'currency', 'defaultAdmissionFee', 'defaultMonthlyFee', 'logoDataUrl',
+          'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.tagline is string && data.tagline.size() <= 180 &&
+        data.senseiName is string && data.senseiName.size() >= 2 && data.senseiName.size() <= 100 &&
+        data.phone is string && data.phone.size() <= 40 &&
+        data.email is string && data.email.size() <= 120 &&
+        data.address is string && data.address.size() <= 300 &&
+        data.currency is string && data.currency.size() >= 1 && data.currency.size() <= 10 &&
+        data.defaultAdmissionFee is number && data.defaultAdmissionFee >= 0 && data.defaultAdmissionFee <= 1000000 &&
+        data.defaultMonthlyFee is number && data.defaultMonthlyFee >= 0 && data.defaultMonthlyFee <= 1000000 &&
+        data.logoDataUrl is string && data.logoDataUrl.size() <= 300000 &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidDojoBatch(data) {
+      return data.keys().hasAll([
+          'name', 'schedule', 'instructor', 'monthlyFee', 'capacity',
+          'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'name', 'schedule', 'instructor', 'monthlyFee', 'capacity',
+          'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 80 &&
+        data.schedule is string && data.schedule.size() >= 2 && data.schedule.size() <= 100 &&
+        data.instructor is string && data.instructor.size() <= 80 &&
+        data.monthlyFee is number && data.monthlyFee >= 0 && data.monthlyFee <= 1000000 &&
+        data.capacity is number && data.capacity >= 1 && data.capacity <= 1000 &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll([
+          'rollNumber', 'fullName', 'dateOfBirth', 'gender', 'guardianName',
+          'phone', 'email', 'address', 'emergencyContact', 'batchId', 'batchName',
+          'beltRank', 'admissionDate', 'admissionFee', 'monthlyFee', 'status',
+          'medicalNotes', 'lastPromotedDate', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'rollNumber', 'fullName', 'dateOfBirth', 'gender', 'guardianName',
+          'phone', 'email', 'address', 'emergencyContact', 'batchId', 'batchName',
+          'beltRank', 'admissionDate', 'admissionFee', 'monthlyFee', 'status',
+          'medicalNotes', 'lastPromotedDate', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.rollNumber is string && data.rollNumber.size() >= 2 && data.rollNumber.size() <= 32 &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
+        isValidOptionalDateString(data.dateOfBirth) &&
+        data.gender in ['Male', 'Female', 'Other'] &&
+        data.guardianName is string && data.guardianName.size() <= 100 &&
+        data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30 &&
+        data.email is string && data.email.size() <= 120 &&
+        data.address is string && data.address.size() <= 250 &&
+        data.emergencyContact is string && data.emergencyContact.size() <= 100 &&
+        isValidId(data.batchId) &&
+        data.batchName is string && data.batchName.size() >= 1 && data.batchName.size() <= 80 &&
+        data.beltRank in ['White', 'Yellow', 'Orange', 'Green', 'Blue', 'Purple', 'Brown', 'Black'] &&
+        isValidDateString(data.admissionDate) &&
+        data.admissionFee is number && data.admissionFee >= 0 && data.admissionFee <= 1000000 &&
+        data.monthlyFee is number && data.monthlyFee >= 0 && data.monthlyFee <= 1000000 &&
+        data.status in ['Active', 'On Leave', 'Inactive'] &&
+        data.medicalNotes is string && data.medicalNotes.size() <= 500 &&
+        isValidOptionalDateString(data.lastPromotedDate) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidOnlineAdmission(data) {
+      return data.keys().hasAll([
+          'applicantName', 'dateOfBirth', 'gender', 'guardianName', 'phone',
+          'email', 'address', 'emergencyContact', 'preferredBatchId',
+          'preferredBatchName', 'previousExperience', 'medicalNotes',
+          'applicationStatus', 'submittedDate', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'applicantName', 'dateOfBirth', 'gender', 'guardianName', 'phone',
+          'email', 'address', 'emergencyContact', 'preferredBatchId',
+          'preferredBatchName', 'previousExperience', 'medicalNotes',
+          'applicationStatus', 'submittedDate', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.applicantName is string && data.applicantName.size() >= 2 && data.applicantName.size() <= 100 &&
+        isValidOptionalDateString(data.dateOfBirth) &&
+        data.gender in ['Male', 'Female', 'Other'] &&
+        data.guardianName is string && data.guardianName.size() <= 100 &&
+        data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30 &&
+        data.email is string && data.email.size() <= 120 &&
+        data.address is string && data.address.size() <= 250 &&
+        data.emergencyContact is string && data.emergencyContact.size() <= 100 &&
+        data.preferredBatchId is string && data.preferredBatchId.size() <= 128 &&
+        data.preferredBatchName is string && data.preferredBatchName.size() <= 80 &&
+        data.previousExperience is string && data.previousExperience.size() <= 200 &&
+        data.medicalNotes is string && data.medicalNotes.size() <= 500 &&
+        data.applicationStatus in ['Pending', 'Approved', 'Rejected'] &&
+        isValidDateString(data.submittedDate) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAttendanceRecord(data) {
+      return data.keys().hasAll([
+          'date', 'month', 'studentId', 'studentName', 'rollNumber',
+          'batchId', 'status', 'note', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'date', 'month', 'studentId', 'studentName', 'rollNumber',
+          'batchId', 'status', 'note', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidDateString(data.date) &&
+        isValidMonthString(data.month) &&
+        isValidId(data.studentId) &&
+        data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 100 &&
+        data.rollNumber is string && data.rollNumber.size() >= 1 && data.rollNumber.size() <= 32 &&
+        isValidId(data.batchId) &&
+        data.status in ['Present', 'Absent', 'Late'] &&
+        data.note is string && data.note.size() <= 200 &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPaymentRecord(data) {
+      return data.keys().hasAll([
+          'receiptNumber', 'category', 'studentId', 'studentName',
+          'billingMonth', 'amount', 'discount', 'netAmount', 'method',
+          'paymentDate', 'status', 'notes', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'receiptNumber', 'category', 'studentId', 'studentName',
+          'billingMonth', 'amount', 'discount', 'netAmount', 'method',
+          'paymentDate', 'status', 'notes', 'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.receiptNumber is string && data.receiptNumber.size() >= 2 && data.receiptNumber.size() <= 40 &&
+        data.category in [
+          'Monthly Fee', 'Admission Fee', 'Belt Exam',
+          'Uniform & Gear', 'Tournament', 'Private Coaching', 'Other Income'
+        ] &&
+        data.studentId is string && data.studentId.size() <= 128 &&
+        data.studentName is string && data.studentName.size() <= 100 &&
+        isValidMonthString(data.billingMonth) &&
+        data.amount is number && data.amount >= 0 && data.amount <= 1000000 &&
+        data.discount is number && data.discount >= 0 && data.discount <= 1000000 &&
+        data.netAmount is number && data.netAmount >= 0 && data.netAmount <= 1000000 &&
+        data.method in ['Cash', 'Card', 'Bank Transfer', 'Mobile / UPI'] &&
+        isValidDateString(data.paymentDate) &&
+        data.status in ['Paid', 'Partial'] &&
+        data.notes is string && data.notes.size() <= 300 &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMonthlyBill(data) {
+      return data.keys().hasAll([
+          'title', 'category', 'billingMonth', 'amount', 'dueDate',
+          'paidDate', 'status', 'recurring', 'vendor', 'notes',
+          'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'title', 'category', 'billingMonth', 'amount', 'dueDate',
+          'paidDate', 'status', 'recurring', 'vendor', 'notes',
+          'ownerId', 'createdAt', 'updatedAt'
+        ]) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        data.category in [
+          'Dojo Rent', 'Instructor Salary', 'Utilities',
+          'Equipment & Mats', 'Marketing', 'Maintenance', 'Other'
+        ] &&
+        isValidMonthString(data.billingMonth) &&
+        data.amount is number && data.amount >= 0 && data.amount <= 10000000 &&
+        isValidDateString(data.dueDate) &&
+        isValidOptionalDateString(data.paidDate) &&
+        data.status in ['Paid', 'Pending'] &&
+        data.recurring is bool &&
+        data.vendor is string && data.vendor.size() <= 100 &&
+        data.notes is string && data.notes.size() <= 300 &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+    match /dojos/{dojoId} {
+      allow get: if isValidId(dojoId) && isVerifiedUser() && (
+        (resource == null && (dojoId == request.auth.uid || isBootstrappedAdmin())) ||
+        (resource != null && (existing().ownerId == request.auth.uid || isBootstrappedAdmin()))
+      );
+      allow list: if isVerifiedUser() && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+      allow create: if isValidId(dojoId) &&
+        isVerifiedUser() &&
+        (dojoId == request.auth.uid || isBootstrappedAdmin()) &&
+        isValidDojoProfile(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(dojoId) &&
+        isVerifiedUser() &&
+        isValidDojoProfile(incoming()) &&
+        isOwnerOrAdminOnExisting() &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'tagline', 'senseiName', 'phone', 'email', 'address',
+          'currency', 'defaultAdmissionFee', 'defaultMonthlyFee', 'logoDataUrl', 'updatedAt'
+        ]);
+      allow delete: if isValidId(dojoId) && isOwnerOrAdminOnExisting();
+
+      match /batches/{batchId} {
+        allow get: if isValidId(dojoId) && isValidId(batchId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+        allow list: if isValidId(dojoId) && isVerifiedUser() && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+        allow create: if isValidId(dojoId) && isValidId(batchId) &&
+          isVerifiedUser() &&
+          isValidDojoBatch(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (isDojoOwner(dojoId) || isDojoOwnerAfter(dojoId));
+        allow update: if isValidId(dojoId) && isValidId(batchId) &&
+          isVerifiedUser() &&
+          isValidDojoBatch(incoming()) &&
+          (isDojoOwner(dojoId) || isBootstrappedAdmin()) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'schedule', 'instructor', 'monthlyFee', 'capacity', 'updatedAt'
+          ]);
+        allow delete: if isValidId(dojoId) && isValidId(batchId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+      }
+
+      match /students/{studentId} {
+        allow get: if isValidId(dojoId) && isValidId(studentId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+        allow list: if isValidId(dojoId) && isVerifiedUser() && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+        allow create: if isValidId(dojoId) && isValidId(studentId) &&
+          isVerifiedUser() &&
+          isValidStudent(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (isDojoOwner(dojoId) || isDojoOwnerAfter(dojoId));
+        allow update: if isValidId(dojoId) && isValidId(studentId) &&
+          isVerifiedUser() &&
+          isValidStudent(incoming()) &&
+          (isDojoOwner(dojoId) || isBootstrappedAdmin()) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'rollNumber', 'fullName', 'dateOfBirth', 'gender', 'guardianName',
+            'phone', 'email', 'address', 'emergencyContact', 'batchId', 'batchName',
+            'beltRank', 'admissionDate', 'admissionFee', 'monthlyFee', 'status',
+            'medicalNotes', 'lastPromotedDate', 'updatedAt'
+          ]);
+        allow delete: if isValidId(dojoId) && isValidId(studentId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+      }
+
+      match /admissions/{admissionId} {
+        allow get: if isValidId(dojoId) && isValidId(admissionId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+        allow list: if isValidId(dojoId) && isVerifiedUser() && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+        allow create: if isValidId(dojoId) && isValidId(admissionId) &&
+          isVerifiedUser() &&
+          isValidOnlineAdmission(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (isDojoOwner(dojoId) || isDojoOwnerAfter(dojoId));
+        allow update: if isValidId(dojoId) && isValidId(admissionId) &&
+          isVerifiedUser() &&
+          isValidOnlineAdmission(incoming()) &&
+          (isDojoOwner(dojoId) || isBootstrappedAdmin()) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'applicantName', 'dateOfBirth', 'gender', 'guardianName', 'phone',
+            'email', 'address', 'emergencyContact', 'preferredBatchId',
+            'preferredBatchName', 'previousExperience', 'medicalNotes',
+            'applicationStatus', 'submittedDate', 'updatedAt'
+          ]);
+        allow delete: if isValidId(dojoId) && isValidId(admissionId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+      }
+
+      match /attendance/{attendanceId} {
+        allow get: if isValidId(dojoId) && isValidId(attendanceId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+        allow list: if isValidId(dojoId) && isVerifiedUser() && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+        allow create: if isValidId(dojoId) && isValidId(attendanceId) &&
+          isVerifiedUser() &&
+          isValidAttendanceRecord(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (isDojoOwner(dojoId) || isDojoOwnerAfter(dojoId));
+        allow update: if isValidId(dojoId) && isValidId(attendanceId) &&
+          isVerifiedUser() &&
+          isValidAttendanceRecord(incoming()) &&
+          (isDojoOwner(dojoId) || isBootstrappedAdmin()) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'date', 'month', 'studentId', 'studentName', 'rollNumber',
+            'batchId', 'status', 'note', 'updatedAt'
+          ]);
+        allow delete: if isValidId(dojoId) && isValidId(attendanceId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+      }
+
+      match /payments/{paymentId} {
+        allow get: if isValidId(dojoId) && isValidId(paymentId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+        allow list: if isValidId(dojoId) && isVerifiedUser() && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+        allow create: if isValidId(dojoId) && isValidId(paymentId) &&
+          isVerifiedUser() &&
+          isValidPaymentRecord(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (isDojoOwner(dojoId) || isDojoOwnerAfter(dojoId));
+        allow update: if isValidId(dojoId) && isValidId(paymentId) &&
+          isVerifiedUser() &&
+          isValidPaymentRecord(incoming()) &&
+          (isDojoOwner(dojoId) || isBootstrappedAdmin()) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'receiptNumber', 'category', 'studentId', 'studentName',
+            'billingMonth', 'amount', 'discount', 'netAmount', 'method',
+            'paymentDate', 'status', 'notes', 'updatedAt'
+          ]);
+        allow delete: if isValidId(dojoId) && isValidId(paymentId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+      }
+
+      match /bills/{billId} {
+        allow get: if isValidId(dojoId) && isValidId(billId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+        allow list: if isValidId(dojoId) && isVerifiedUser() && (existing().ownerId == request.auth.uid || isBootstrappedAdmin());
+        allow create: if isValidId(dojoId) && isValidId(billId) &&
+          isVerifiedUser() &&
+          isValidMonthlyBill(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (isDojoOwner(dojoId) || isDojoOwnerAfter(dojoId));
+        allow update: if isValidId(dojoId) && isValidId(billId) &&
+          isVerifiedUser() &&
+          isValidMonthlyBill(incoming()) &&
+          (isDojoOwner(dojoId) || isBootstrappedAdmin()) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'category', 'billingMonth', 'amount', 'dueDate',
+            'paidDate', 'status', 'recurring', 'vendor', 'notes', 'updatedAt'
+          ]);
+        allow delete: if isValidId(dojoId) && isValidId(billId) && (isDojoOwner(dojoId) || isBootstrappedAdmin());
+      }
+    }
+  }
+}

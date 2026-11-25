@@ -1,0 +1,6 @@
+{
+  "name": "Sōryuken Karate Club",
+  "description": "Complete karate institution management platform for Sōryuken Karate Club: online and in-house admissions, student database, attendance tracking, fee collection, monthly bills, income ledger, and printable reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
